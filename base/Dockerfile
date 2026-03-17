@@ -47,9 +47,12 @@ RUN mkdir -p /home/node/.npm-global && \
   mkdir -p /home/node/.bun/bin
 
 # 5. Install agent-browser (headless browser automation CLI for AI agents)
-# Downloads Chromium browser to user's cache
 RUN npm install -g agent-browser && \
-  agent-browser install
+  if [ "$(dpkg --print-architecture)" = "arm64" ]; then \
+    echo "Skipping agent-browser browser download on arm64"; \
+  else \
+    agent-browser install; \
+  fi
 
 # 6. Bash Configuration
 # Add the path export to bashrc so interactive shells pick it up

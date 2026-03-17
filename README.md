@@ -37,6 +37,7 @@ Tool-specific images extend this base with their unique requirements:
 ```
 agent-base
 ├── claude-code
+├── open-code
 └── openai-codex
 ```
 
@@ -109,12 +110,26 @@ function claude() {
 function codex() {
   eval "$(__ai_container_launcher) --rm --tty --interactive -e OPENAI_API_KEY -v $(pwd):/app:rw openai-codex $@"
 }
+
+function opencode() {
+  ~/.local/bin/opencode-project "$@"
+}
 ```
 
 Put those some place in your `.zshrc` or `.bashrc` file and you'll be able to
 launch the agent in a working directory with a call to `claude` or `codex`. You
 can test they work by getting a bash shell in them with `claude bash` or
 `claude codex`.
+
+For OpenCode, build `open-code` first and install the launcher script once:
+
+```bash
+make open-code
+install -m 0755 ./open-code/opencode-project ~/.local/bin/opencode-project
+```
+
+Then you can run `opencode` from any project directory and it will launch an
+isolated OpenCode container session for that specific project.
 
 ## See Also
 

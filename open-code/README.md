@@ -13,29 +13,58 @@ You can add more local tools to the container to be installed via `apt-get` by
 extending the `LOCAL_TOOLS` list in the top-level `Makefile`.
 
 ## Run Instructions
-- Just create the following file, make it executable with `chmod +x` and place it in `~/.local/bin`
-- Startup is a bit slow due to container startup time, but taking ~5s startup penalty for safety measures is not so bad.
-- I also add the host mapping to host.docker.internal so the container can access your localhost (useful for the agent-browser or similar MCPs to access your apps running on localhost)
-- There are 4 volumes, make sure the directories in your $HOME exist and with the correct user privilege (your $UID):
-  1. opencode global state - UI state, command history, model preferences, recently opened files
-  2. opencode global share - Auth tokens, session data, LSP servers, git snapshots for undo, logs
-  3. opencode global config - User configuration: themes, keybindings, custom commands, plugins 
-  3. the repo you work - mounted as current PWD when executing `opencode` in your terminal
+
+The repository now includes `open-code/opencode-project`, a launcher script that:
+
+- Detects `podman` or `docker` automatically.
+- Uses a container name based on project name + path hash.
+- Mounts your current repository into `/app`.
+- Reuses your global OpenCode config/share/state by default (so connected models/tokens persist).
+- Supports full per-project isolation with `--all-isolate` (or `OPENCODEBOX_ISOLATE=1`).
+
+Install it once:
 
 ```bash
-#!/usr/bin/env bash
+install -m 0755 ./open-code/opencode-project ~/.local/bin/opencode-project
+```
 
-PROJ="$(basename "$(pwd)")"
-NAME="open-code-${PROJ}"
+Then add an alias in your shell (`~/.zshrc` or `~/.bashrc`):
 
-exec docker run --rm --tty --interactive \
-  --name "$NAME" \
-  --add-host=host.docker.internal:host-gateway \
-  -v "$HOME/.local/state/opencode:/home/node/.local/state/opencode" \
-  -v "$HOME/.local/share/opencode:/home/node/.local/share/opencode" \
-  -v "$HOME/.config/opencode:/home/node/.config/opencode" \
-  -v "$(pwd):/app:rw" \
-  open-code "$@"
+```bash
+alias opencodebox='opencode-project'
+alias opencodebox_isolate='opencode-project --all-isolate'
+```
+
+Usage from any project directory:
+
+```bash
+opencodebox
+```
+
+Debug the generated container command without launching it:
+
+```bash
+opencodebox --dry-run
+```
+
+Project isolation is stored under:
+
+- `${XDG_DATA_HOME:-$HOME/.local/share}/opencode-projects/<project-id>/state`
+- `${XDG_DATA_HOME:-$HOME/.local/share}/opencode-projects/<project-id>/share`
+- `${XDG_CONFIG_HOME:-$HOME/.config}/opencode-projects/<project-id>`
+
+This keeps each project's OpenCode session data separate while keeping one simple alias.
+
+If you want full isolation for one run:
+
+```bash
+opencodebox --all-isolate
+```
+
+Equivalent environment-variable mode:
+
+```bash
+OPENCODEBOX_ISOLATE=1 opencodebox
 ```
 
 ## References
